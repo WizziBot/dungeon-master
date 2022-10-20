@@ -15,6 +15,9 @@ const colours = {
     'yellow': '1032376199835566110',
     'indigo': '1032376577570394143',
 };
+// add JSON storage for webhooks so no need to fetch them
+// channelid ->
+// 'R':'webhookid'
 const colourAv = {
     '1032375800256811018':'R',
     '1032376058936303637':'G',
@@ -24,6 +27,8 @@ const colourAv = {
     '1032376199835566110':'Y',
     '1032376577570394143':'I',
 }
+
+let allWebhooks = require('./webhooks.json');
 
 const dungeonChannelId = '1032563266171457546';
 const exemptRoleId = '1032567381584793621';
@@ -39,6 +44,7 @@ for(const sfile of scommandFiles){
 let memberChannels = {};
 
 async function broadcastMsg(msg){
+    // console.log(msg.content)
     client.guilds.cache.forEach(async guild=>{
         let colour = '';
         const keys = await msg.member.roles.cache.keys()
@@ -46,6 +52,7 @@ async function broadcastMsg(msg){
             colour = colourAv[id];
             if (colour !== '') break;
         }
+
         // console.log(colour);
         if (colour == ''){colour = 'R'}
         guild.channels.cache.filter(c=>(c.type == Discord.ChannelType.GuildText) && (c.parentId == dungeonChannelId) && (c.id != memberChannels[msg.author.id])).forEach(async c => {
@@ -54,12 +61,20 @@ async function broadcastMsg(msg){
                     if (wh.name == colour ){
                         await wh.send({
                             content: msg.content,
+                            attachments: msg.attachments,
                             username: 'Creature',
                         });
                     }
                 });
             });
         });
+    });
+}
+
+async function writeWebhooks(){
+    const data = JSON.stringify(allWebhooks);
+    fs.appendFile('./webhooks.json',data,(err)=>{
+        if (err) console.trace(err);
     });
 }
 
@@ -73,24 +88,44 @@ client.once(Discord.Events.ClientReady, async client => {
             if (members.length > 0) {memberChannels[members[0]]=c.id}
             // move this to when the channel is created
             let webhooks = await c.fetchWebhooks();
-            // webhooks.forEach(async w => {w.delete()})
+            // webhooks.forEach(async w => {w.delete()});
+            // return;
             if (webhooks.size == 0){
-                Object.values(colourAv).forEach(col => {
+                allWebhooks[c.id] = {};
+                Object.values(colourAv).forEach(async col => {
                     c.createWebhook({
                         name: col,
                         avatar: `./colour_avatars/${col}.png`
-                    }).then(() => console.log('Spawned a Creature'))
-                    .catch(console.error);
+                    }).then(wh => {
+                        console.log('Spawned a Creature ' + col);
+                        allWebhooks[c.id][col] = wh.id;
+                        console.log(allWebhooks);
+                    }).catch(console.error);
+                });
+            } else if (webhooks.size != 0 && webhooks.size < 7){
+                webhooks.forEach(async w => {w.delete()});
+                allWebhooks[c.id] = {};
+                Object.values(colourAv).forEach(async col => {
+                    c.createWebhook({
+                        name: col,
+                        avatar: `./colour_avatars/${col}.png`
+                    }).then(wh => {
+                        console.log('Spawned a Creature ' + col);
+                        allWebhooks[c.id][col] = wh.id;
+                        console.log(allWebhooks);
+                    }).catch(console.error);
                 });
             }
+            console.log(allWebhooks)
         });
     });
     // console.log(memberChannels)
 });
 
-// client.on(Discord.Events.GuildMemberAdd, async member => {
-    
-// });
+client.on(Discord.Events.GuildMemberAdd, async member => {
+    //create channel
+    //asign permission 
+});
 
 client.on(Discord.Events.InteractionCreate, async interaction => {
     if (!interaction.isChatInputCommand()) return;

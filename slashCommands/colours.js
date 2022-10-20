@@ -17,12 +17,12 @@ module.exports = {
             cc = cc.slice('1');
             colorsEmbed = new Discord.EmbedBuilder()
                     .setColor('#000000')
-                    .setTitle('Avalible Colors')
-                    .setAuthor({ name: interaction.user.tag, iconURL: interaction.user.avatarURL()})
+                    // .setTitle('Avalible Colors')
+                    // .setAuthor({ name: interaction.user.tag, iconURL: interaction.user.avatarURL()})
                     .addFields(
-                        { name: 'All', value: cc, inline: true},
+                        { name: 'All colours', value: cc, inline: true},
                     )
-                    .setTimestamp()
+                    // .setTimestamp()
             interaction.reply({embeds: [colorsEmbed]});
         } catch(e){
             console.log(e);

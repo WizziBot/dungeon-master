@@ -23,7 +23,7 @@ module.exports = {
                         { name: 'All colours', value: cc, inline: true},
                     )
                     // .setTimestamp()
-            interaction.reply({embeds: [colorsEmbed]});
+            interaction.reply({embeds: [colorsEmbed],ephemeral: true});
         } catch(e){
             console.log(e);
             interaction.channel.send('Unknown Error.');

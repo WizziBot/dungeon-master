@@ -15,13 +15,13 @@ const colours = {
     'indigo': '1032376577570394143',
 };
 
-client.commands = new Discord.Collection();
-const commandFiles = fs.readdirSync('./chatCommands/').filter(file => file.endsWith('.js'));
-for(const file of commandFiles){
-    const command = require(`./chatCommands/${file}`);
+// client.commands = new Discord.Collection();
+// const commandFiles = fs.readdirSync('./chatCommands/').filter(file => file.endsWith('.js'));
+// for(const file of commandFiles){
+//     const command = require(`./chatCommands/${file}`);
 
-    client.commands.set(command.name, command);
-}
+//     client.commands.set(command.name, command);
+// }
 client.scommands = new Discord.Collection();
 const scommandFiles = fs.readdirSync('./slashCommands/').filter(file => file.endsWith('.js'));
 for(const sfile of scommandFiles){
@@ -53,26 +53,26 @@ client.on(Discord.Events.InteractionCreate, async interaction => {
 	}
 });
 
-client.on('messageCreate', async message => {
-    if(message.guild === null) return;
-    if(!message.content.startsWith(prefix) || message.author.bot) return;
-    const preargs = message.content.slice(prefix.length).trim().split(' ');
-    const args = preargs.filter(function (el) {
-        return el != '';
-      });
-    const command = args.shift().toLowerCase();
-    const commandArgs = args.join(' ');
+// client.on('messageCreate', async message => {
+//     if(message.guild === null) return;
+//     if(!message.content.startsWith(prefix) || message.author.bot) return;
+//     const preargs = message.content.slice(prefix.length).trim().split(' ');
+//     const args = preargs.filter(function (el) {
+//         return el != '';
+//       });
+//     const command = args.shift().toLowerCase();
+//     const commandArgs = args.join(' ');
 
-    //credit system commands
-    if(command === 'ping'){
-        if(message.member.roles.cache.has('775067525196283905')){
-            client.commands.get('ping').execute(message, args);
-        }
-    } else if(command === 'colour'){
-        client.commands.get('colour').execute(message, commandArgs, colors);
-    } else if(command === 'colours'){
-        client.commands.get('colours').execute(message, commandArgs, colors);
-    }
-});
+//     //credit system commands
+//     if(command === 'ping'){
+//         if(message.member.roles.cache.has('775067525196283905')){
+//             client.commands.get('ping').execute(message, args);
+//         }
+//     } else if(command === 'colour'){
+//         client.commands.get('colour').execute(message, commandArgs, colors);
+//     } else if(command === 'colours'){
+//         client.commands.get('colours').execute(message, commandArgs, colors);
+//     }
+// });
 
 client.login('MTAzMjM2OTI5NzYzODU2MzkzMw.GOZvof.OXvN3AdEab7EeOTHuBmkKlm2CsgGSI7CrqytQg');

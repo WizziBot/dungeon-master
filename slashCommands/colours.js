@@ -1,11 +1,13 @@
 const { SlashCommandBuilder } = require('discord.js');
 
+const data = new SlashCommandBuilder()
+                .setName('colours')
+                .setDescription('Lists assignable colours.');
+
 module.exports = {
     name: 'colours',
-	data: new SlashCommandBuilder()
-		.setName('colours')
-		.setDescription('Lists assignable colours.'),
-	async execute(interaction,colours) {
+	data: data,
+	async execute(interaction) {
 		const Discord = require('discord.js');
         try{
             var i;
@@ -26,7 +28,7 @@ module.exports = {
             interaction.reply({embeds: [colorsEmbed],ephemeral: true});
         } catch(e){
             console.log(e);
-            interaction.channel.send('Unknown Error.');
+            interaction.reply({content:'Unknown Error.'});
         }
 	},
 };

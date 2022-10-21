@@ -11,15 +11,7 @@ It is a miserable place... but in misery lies hope, the goals of the Dungeon Mas
 It is thine right to change the colour of soul, the Dungeon Master would see to it that your urges are sated.
 Should you wish to breach the surface and be relieved the veil of shadow, you may consult the Dungeon Master - ever watchful.`
 
-const colours = {
-    'red': '1032375800256811018',
-    'green': '1032376058936303637',
-    'blue': '1032376087847632948',
-    'purple': '1032376123755085925',
-    'cyan': '1032376250888634440',
-    'yellow': '1032376199835566110',
-    'indigo': '1032376577570394143',
-};
+const colours = require('./colours.json');
 
 const colourAv = {
     '1032375800256811018':'R',
@@ -123,7 +115,7 @@ async function pruneChannels(){
         //channels
         let c = channels.at(i);
         if (c.id == ownerChannel) continue;
-        let members = c.members.filter(m=>(!m.roles.cache.has(exemptRoleId)));
+        let members = c.members.filter(m=>(!m.roles.cache.has(exemptRoleId) && !m.user.bot));
         if (members.size > 0 && !mcValues.includes(c.id)) {
             memberChannels[members.first().user.id]=c.id;
             slog(`Added member ${members.first().user.tag}`);
@@ -228,7 +220,7 @@ client.once(Discord.Events.ClientReady, async client => {
         let c = channels.at(i);
         //channels
         if (c.id == ownerChannel) continue;
-        let members = c.members.filter(m=>(!m.roles.cache.has(exemptRoleId)));
+        let members = c.members.filter(m=>(!m.roles.cache.has(exemptRoleId) && !m.user.bot));
         if (members.size > 0 && !mcValues.includes(c.id)) {
             memberChannels[members.first().user.id]=c.id;
             slog(`Added member ${members.first().user.tag}`);
@@ -398,11 +390,12 @@ client.on(Discord.Events.InteractionCreate, async interaction => {
 	if (!command) return;
 
 	try {
-        if (interaction.commandName == 'colour' || interaction.commandName == 'colours') {
-            await command.execute(interaction,colours);
-        } else {
+        // if (interaction.commandName == 'colour' || interaction.commandName == 'colours') {
+        //     await command.execute(interaction,colours);
+        // } else {
             await command.execute(interaction);
-        }
+            // slog(interaction.options.get('colour'));
+        // }
 	} catch (error) {
 		console.error(error);
 		await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });

@@ -1,14 +1,28 @@
 const { SlashCommandBuilder } = require('discord.js');
+const colours = require('../colours.json');
+
+const data = new SlashCommandBuilder()
+                .setName('colour')
+                .setDescription('Assigns colour.')
+                .addStringOption(option =>
+                    option.setName('colour').setDescription("Select the colour of your soul.").setRequired(true)
+                    .addChoices(
+                        { name: 'red', value:   '1032375800256811018' },
+                        { name: 'green', value: '1032376058936303637' },
+                        { name: 'blue', value:  '1032376087847632948' },
+                        { name: 'purple', value:'1032376123755085925' },
+                        { name: 'cyan', value:  '1032376250888634440' },
+                        { name: 'yellow', value:'1032376199835566110' },
+                        { name: 'indigo', value:'1032376577570394143' },
+                    )
+                );
 
 module.exports = {
     name: 'colour',
-	data: new SlashCommandBuilder()
-		.setName('colour')
-		.setDescription('Assigns colour.')
-        .addStringOption(option =>
-            option.setName('colour').setDescription("colour").setRequired(true)),
-	async execute(interaction,colours) {
+	data: data,
+	async execute(interaction) {
 		try{
+            // run dis shit at .value
             const choice = interaction.options.get('colour')
 
             var i;
@@ -19,35 +33,12 @@ module.exports = {
                 }
             }
 
-            var u;
-            var applied = false;
-            var c2;
-            for(u = 0; u < keys.length; u++){
-                if(choice === keys[u]){
-                    interaction.member.roles.add(colours[keys[u]]);
-                    c2 = keys[u];
-                    applied = true;
-                }
-            }
-            if(choice == ''){
-                interaction.channel.send(`Successfully cleared current color.`).then(msg => {
-                    msg.delete({timeout:5000});
-                });
-                return
-            }
-            if(applied === false){
-                interaction.channel.send('Please choose a valid color. `-colors` to see avalible colors.').then(msg => {
-                    msg.delete({timeout:5000});
-                });
-                return;
-            }
-            
-            interaction.channel.send(`Successfully applied the color \`${c2}\`.`).then(msg => {
-                msg.delete({timeout:5000});
-            });
+            interaction.member.roles.add(choice.value);
+
+            interaction.reply({content:'The taste of thine soul hath changed.', ephemeral:true})
 
         } catch(e){
-            return interaction.channel.send('Unknown Error.');
+            interaction.reply({content:'Unknown Error.'});
         }
 	},
 };

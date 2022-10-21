@@ -44,7 +44,13 @@ for(const sfile of scommandFiles){
 
 let memberChannels = require('./memberChannels.json');
 
+
+// add reply functionality 
 async function broadcastMsg(msg){
+    let attachments = []
+    msg.attachments.forEach(at => {
+        attachments.push(at.url)
+    });
     // console.log(msg.content)
     const guild = client.guilds.cache.first();
     let colour = '';
@@ -67,7 +73,7 @@ async function broadcastMsg(msg){
             ch.fetchWebhooks().then(whs=>{
                 whs.get(col[colour]).send({
                     content: msg.content,
-                    attachments: msg.attachments,
+                    files: attachments,
                     username: 'Creature',
                 });
             });
@@ -230,7 +236,6 @@ client.once(Discord.Events.ClientReady, async client => {
             let delCh = c.id;
             for (let i=0;i<keys.length;i++){
                 if (memberChannels[keys[i]] == delCh) {
-                    slog('Awaiting potential');
                     const isPossibleMember = guild.members.resolve(keys[i]);
                     if (isPossibleMember){
                         const possibleMember = await guild.members.fetch(keys[i]);
@@ -379,7 +384,7 @@ client.on(Discord.Events.GuildMemberAdd, async member => {
             }).catch((err)=>reject(err));
         }
     }).then(()=>{writeWebhooks();writeChannels();}).catch((err)=>console.error(err));
-    slog('Created new channel for '+m.user.tag);
+    slog('Created new channel for '+member.user.tag);
 });
 
 client.on(Discord.Events.InteractionCreate, async interaction => {

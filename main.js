@@ -45,8 +45,20 @@ for(const sfile of scommandFiles){
 let memberChannels = require('./memberChannels.json');
 
 
-// add reply functionality 
-async function broadcastMsg(msg){
+async function broadcastMsg(msg,isref,refmsg){
+    let content = '';
+
+    // Inject reply
+    if (isref){
+        if (refmsg.content == ''){
+            content = '> `Attachment`\n';
+        } else {
+            content = '> '+refmsg.content+'\n';
+        }
+    }
+
+    content = content + msg.content;
+
     let attachments = []
     msg.attachments.forEach(at => {
         attachments.push(at.url)
@@ -72,7 +84,7 @@ async function broadcastMsg(msg){
         guild.channels.fetch(cid).then(ch=>{
             ch.fetchWebhooks().then(whs=>{
                 whs.get(col[colour]).send({
-                    content: msg.content,
+                    content: content,
                     files: attachments,
                     username: 'Creature',
                 });
@@ -83,7 +95,7 @@ async function broadcastMsg(msg){
 
 async function writeWebhooks(){
     const data = JSON.stringify(allWebhooks,null,4);
-    slog('WROTE TO WEBHOOKS');
+    slog('WRT:WH');
     fs.writeFileSync('./webhooks.json',data,(err)=>{
         if (err) console.trace(err);
     });
@@ -91,7 +103,7 @@ async function writeWebhooks(){
 
 async function writeChannels(){
     const data = JSON.stringify(memberChannels,null,4);
-    slog('WROTE TO CHANNELS');
+    slog('WRT:CH');
     fs.writeFileSync('./memberChannels.json',data,(err)=>{
         if (err) console.trace(err);
     });
@@ -101,18 +113,7 @@ async function slog(str){
     console.log(str);
 }
 
-// async function chatSay(id,msgContent){
-//     const guild = client.guilds.cache.first();
-//     const whs = await guild.channels.cache.get(id).fetchWebhooks();
-//     whs.forEach(wh=>{
-//         wh.send({
-//             content: msgContent,
-//             username: 'Voice',
-//         });
-//     });
-// }
-
-async function pruneChannels(){
+async function purgeChannels(){
     const guild = client.guilds.cache.first();
     const channelsMap = guild.channels.cache.filter(c=>(c.type == Discord.ChannelType.GuildText) && (c.parentId == dungeonCategoryId));
     const mcValues = Object.values(memberChannels);
@@ -163,6 +164,7 @@ async function pruneChannels(){
 async function joinNewMembers(guild){
     guild.members.cache.forEach(async m =>{
         if (!memberChannels.hasOwnProperty(m.user.id) && m.user.id != ownerId && !m.user.bot){
+            slog(`New member ${m.user.tag}`);
             m.roles.add(memberRoleId);
             m.roles.add(defaultColourId);
             const dungeon = await m.guild.channels.fetch(dungeonCategoryId);
@@ -210,7 +212,7 @@ async function joinNewMembers(guild){
                         }
                     }).catch((err)=>reject(err));
                 }
-            }).then(()=>{writeWebhooks();writeChannels();}).catch((err)=>console.error(err));
+            }).then(()=>{writeWebhooks();writeChannels();}).catch((err)=>console.log(err));
             slog('Created new channel for '+m.user.tag);
         }
     });
@@ -231,7 +233,7 @@ client.once(Discord.Events.ClientReady, async client => {
             memberChannels[members.first().user.id]=c.id;
             slog(`Added member ${members.first().user.tag}`);
         } else if (members.size == 0 && mcValues.includes(c.id)) {
-            slog('CHECKING IF MEMBER');
+            slog('Checking if old member.');
             const keys = Object.keys(memberChannels)
             let delCh = c.id;
             for (let i=0;i<keys.length;i++){
@@ -239,7 +241,9 @@ client.once(Discord.Events.ClientReady, async client => {
                     const isPossibleMember = guild.members.resolve(keys[i]);
                     if (isPossibleMember){
                         const possibleMember = await guild.members.fetch(keys[i]);
-                        slog('FOUND OLD MEMBER');
+                        slog('Found old member.');
+                        possibleMember.roles.add(memberRoleId);
+                        possibleMember.roles.add(defaultColourId);
                         c.edit({permissionOverwrites:[
                             {
                                 id:guild.roles.everyone.id,
@@ -256,7 +260,7 @@ client.once(Discord.Events.ClientReady, async client => {
             }
         }
         writeChannels();
-        slog('Wrote channels');
+        // slog('Updated Channels.');
         //webhooks
         let webhooks = await c.fetchWebhooks();
         if(allWebhooks.hasOwnProperty(c.id)) continue;
@@ -269,8 +273,8 @@ client.once(Discord.Events.ClientReady, async client => {
             writeWebhooks();
             continue;
         }
-        slog('Awaiting webhooks');
-        continue;
+        slog('Awaiting webhooks.');
+        // continue;
         await new Promise(async (resolve,reject)=>{
             if (webhooks.size != 0 && webhooks.size < perChannelWebhookNum){
                 webhooks.forEach(async w => {w.delete()});
@@ -301,7 +305,7 @@ client.once(Discord.Events.ClientReady, async client => {
                     }
                 }).catch((err)=>reject(err));
             }
-        }).then(()=>{writeWebhooks();slog('PromiseComplete');}).catch((err)=>console.error(err));
+        }).then(()=>{writeWebhooks();slog('Updated Webhooks.');}).catch((err)=>console.log(err));
     }
     joinNewMembers(guild);
 });
@@ -320,9 +324,9 @@ client.on(Discord.Events.GuildMemberAdd, async member => {
     member.roles.add(memberRoleId);
     member.roles.add(defaultColourId);
 
-    slog('CHECKING IF MEMBER');
+    slog('Checking if old member.');
     if (memberChannels.hasOwnProperty(member.id)){
-        slog('FOUND OLD MEMBER');
+        slog('Found old member.');
         let c = await member.guild.channels.fetch(memberChannels[member.id]);
         c.edit({permissionOverwrites:[
             {
@@ -336,6 +340,7 @@ client.on(Discord.Events.GuildMemberAdd, async member => {
         ]});
         return;
     }
+    slog(`New member ${member.user.tag}`);
 
     const dungeon = await member.guild.channels.fetch(dungeonCategoryId);
     const c = await dungeon.children.create({
@@ -383,7 +388,7 @@ client.on(Discord.Events.GuildMemberAdd, async member => {
                 }
             }).catch((err)=>reject(err));
         }
-    }).then(()=>{writeWebhooks();writeChannels();}).catch((err)=>console.error(err));
+    }).then(()=>{writeWebhooks();writeChannels();}).catch((err)=>console.log(err));
     slog('Created new channel for '+member.user.tag);
 });
 
@@ -402,16 +407,22 @@ client.on(Discord.Events.InteractionCreate, async interaction => {
             // slog(interaction.options.get('colour'));
         // }
 	} catch (error) {
-		console.error(error);
-		await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+		console.trace(error);
+		await interaction.reply({ content: 'Unknown Error.', ephemeral: true });
 	}
 });
 
 client.on('messageCreate', async message => {
     if(message.guild === null || message.author.bot) return;
     if(message.channel.parentId != dungeonCategoryId) return;
-
-    broadcastMsg(message);
+    if(message.reference){
+        // slog('Hey')
+        let ch = (await message.guild.channels.fetch(message.reference.channelId));
+        let msg = await ch.messages.fetch(message.reference.messageId);
+        broadcastMsg(message,true,msg)
+    } else {
+        broadcastMsg(message,false,null);
+    }
 });
 
 client.login('MTAzMjM2OTI5NzYzODU2MzkzMw.GOZvof.OXvN3AdEab7EeOTHuBmkKlm2CsgGSI7CrqytQg');

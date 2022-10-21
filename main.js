@@ -39,6 +39,8 @@ const exemptRoleId = '1032722633118187550';
 const ownerId = '372325472811352065';
 const ownerChannel = '1032742077332729887';
 const memberRoleId = '1032733231205843136';
+const defaultColourId = '1032376058936303637';
+const viewperm = Discord.PermissionsBitField.Flags = Discord.PermissionFlagsBits.ViewChannel;
 
 client.scommands = new Discord.Collection();
 const scommandFiles = fs.readdirSync('./slashCommands/').filter(file => file.endsWith('.js'));
@@ -211,14 +213,28 @@ client.once(Discord.Events.ClientReady, async client => {
             let delCh = c.id;
             for (k in keys){
                 if (memberChannels[k] == delCh) {
-                    delete memberChannels[k];
-                    break;
+                    const possibleMember = guild.members.fetch(k);
+                    if (possibleMember){
+                        c.permissionOverwrites.set([
+                            {
+                                id:guild.roles.everyone.id,
+                                deny: [viewperm]
+                            },
+                            {
+                                id:possibleMember.id,
+                                allow: [viewperm]
+                            }
+                        ],'Joined member to previous channel.');
+                        break;
+                    } else{
+                        delete memberChannels[k];
+                        slog(`Member ${c.name} left.`);
+                        c.delete('Member left.');
+                        delete allWebhooks[delCh];
+                        return;
+                    }
                 }
             }
-            slog(`Member ${c.name} left.`);
-            c.delete('Member left.');
-            delete allWebhooks[delCh];
-            return;
         }
 
         //webhooks
@@ -248,6 +264,7 @@ client.once(Discord.Events.ClientReady, async client => {
         } else if (webhooks.size != 0 && webhooks.size < perChannelWebhookNum){
             // slog('DANGER ZONE');
             // return;
+            guild.members.fetch(c.name)
             webhooks.forEach(async w => {w.delete()});
             allWebhooks[c.id] = {};
             Object.values(colourAv).forEach(async col => {
@@ -285,8 +302,11 @@ client.on(Discord.Events.GuildMemberRemove, async member =>{
     writeChannels();
 });
 client.on(Discord.Events.GuildMemberAdd, async member => {
-    const dungeon = member.guild.channels.cache.get(dungeonCategoryId);
-    let viewperm = Discord.PermissionsBitField.Flags = Discord.PermissionFlagsBits.ViewChannel;
+    //add default roles
+    member.roles.add(memberRoleId);
+    member.roles.add(defaultColourId);
+
+    const dungeon = member.guild.channels.fetch(dungeonCategoryId);
     const newChannel = await dungeon.children.create({
         name:member.user.tag,
         permissionOverwrites:[

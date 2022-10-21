@@ -117,6 +117,8 @@ async function slog(str){
 async function joinNewMembers(guild){
     guild.members.cache.forEach(async m =>{
         if (!memberChannels.hasOwnProperty(m.user.id) && m.user.id != ownerId && !m.user.bot){
+            m.roles.add(memberRoleId);
+            m.roles.add(defaultColourId);
             const dungeon = m.guild.channels.cache.get(dungeonCategoryId);
             let viewperm = Discord.PermissionsBitField.Flags = Discord.PermissionFlagsBits.ViewChannel;
             let newChannel = await dungeon.children.create({

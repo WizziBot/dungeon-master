@@ -8,7 +8,9 @@ const fs = require('fs');
 const drearySpeech = `You are in a dungeon, he has brought you here. You know not with whomst you speak, nor how many lost souls thou may find fellowship with.
 It is a miserable place... but in misery lies hope, the goals of the Dungeon Master - fine mysteries that man hath yet to solve - need not be known at present time.
 It is thine right to change the colour of soul, the Dungeon Master would see to it that your urges are sated.
-Should thou wish to breach the surface and be relieved the veil of shadow, you may consult the Dungeon Master - ever watchful.`
+Should thou wish to breach the surface and be relieved the veil of shadow, you may consult the Dungeon Master - ever watchful.
+
+Type / and all shall become apparent.`;
 
 const colourAv = {
     '1032375800256811018':'R',
@@ -18,6 +20,7 @@ const colourAv = {
     '1032376250888634440':'C',
     '1032376199835566110':'Y',
     '1032376577570394143':'I',
+    '1033424455034228806':'U'
 }
 
 let allWebhooks = require('./webhooks.json');
@@ -70,10 +73,17 @@ async function broadcastMsg(msg,isref,refmsg){
     if (msg.member.roles.cache.size > 0){
         for (let id of keys){
             colour = colourAv[id];
-            if (colour !== '') break;
+            if (colour != '' && colour != undefined && colour != null){
+                if (colour == 'U'){
+                    // CHANGE 7 IF NUM COLOURS CHANGE
+                    colour = Object.values(colourAv)[Math.floor(Math.random()*7)];
+                }
+                break;
+            }
         }
     }
-    if (colour == '' || colour == undefined || colour == null){colour = 'R'}
+
+    if (colour == '' || colour == undefined || colour == null){colour = 'R';slog('Error fetching colour for member '+msg.author.tag)}
 
     Object.entries(allWebhooks).forEach((entry,other) =>{
         const cid = entry[0]
@@ -317,12 +327,6 @@ client.once(Discord.Events.ClientReady, async client => {
     joinNewMembers(guild);
 });
 client.on(Discord.Events.GuildMemberRemove, async member =>{
-    // const delCh = memberChannels[member.id];
-    // member.guild.channels.cache.get(delCh).delete('Member left.');
-    // delete memberChannels[member.id];
-    // delete allWebhooks[delCh];
-    // writeWebhooks();
-    // writeChannels();
     slog(`Member ${member.user.tag} left.`);
 });
 

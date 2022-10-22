@@ -51,7 +51,9 @@ async function broadcastMsg(msg,isref,refmsg){
         if (refmsg.content == ''){
             content = '> `Attachment`\n';
         } else {
-            content = '> '+refmsg.content+'\n';
+            refmsg.content.split("\n").forEach(l =>{
+                content = content + '> '+l+'\n'; 
+            });
         }
     }
 
@@ -166,7 +168,6 @@ async function joinNewMembers(guild){
             m.roles.add(memberRoleId);
             m.roles.add(defaultColourId);
             const dungeon = await m.guild.channels.fetch(dungeonCategoryId);
-            let viewperm = Discord.PermissionsBitField.Flags = Discord.PermissionFlagsBits.ViewChannel;
             let c = await dungeon.children.create({
                 name:m.user.tag,
                 permissionOverwrites:[

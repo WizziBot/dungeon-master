@@ -25,8 +25,8 @@ const perChannelWebhookNum = 8;
 
 const dungeonCategoryId = '1032563266171457546';
 const exemptRoleId = '1032722633118187550';
-const ownerId = '372325472811352065';
-const ownerChannel = '1032742077332729887';
+const ownerId = '432816302424457226';
+const ownerChannel = '1032975203573174292';
 const memberRoleId = '1032733231205843136';
 const deanonId = '1032697010496737360';
 const defaultColourId = '1032376058936303637';

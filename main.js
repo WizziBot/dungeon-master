@@ -20,6 +20,16 @@ const colourAv = {
     '1032376250888634440':'C',
     '1032376199835566110':'Y',
     '1032376577570394143':'I',
+}
+
+const colourRl = {
+    '1032375800256811018':'R',
+    '1032376058936303637':'G',
+    '1032376087847632948':'B',
+    '1032376123755085925':'P',
+    '1032376250888634440':'C',
+    '1032376199835566110':'Y',
+    '1032376577570394143':'I',
     '1033424455034228806':'U'
 }
 
@@ -72,11 +82,11 @@ async function broadcastMsg(msg,isref,refmsg){
     const keys = await msg.member.roles.cache.keys()
     if (msg.member.roles.cache.size > 0){
         for (let id of keys){
-            colour = colourAv[id];
+            colour = colourRl[id];
             if (colour != '' && colour != undefined && colour != null){
                 if (colour == 'U'){
                     // CHANGE 7 IF NUM COLOURS CHANGE
-                    colour = Object.values(colourAv)[Math.floor(Math.random()*7)];
+                    colour = Object.values(colourRl)[Math.floor(Math.random()*7)];
                 }
                 break;
             }

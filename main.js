@@ -3,15 +3,12 @@ const client = new Discord.Client({
     intents: [ Discord.GatewayIntentBits.Guilds, Discord.GatewayIntentBits.GuildMessages, Discord.GatewayIntentBits.GuildMembers, Discord.GatewayIntentBits.GuildWebhooks, Discord.GatewayIntentBits.MessageContent, Discord.GatewayIntentBits.AutoModerationConfiguration, Discord.GatewayIntentBits.AutoModerationExecution, Discord.GatewayIntentBits.GuildPresences ],
     partials: [Discord.Partials.GuildMember, Discord.Partials.User]
 });  
-const prefix = '-';
 const fs = require('fs');
 
 const drearySpeech = `You are in a dungeon, he has brought you here. You know not with whomst you speak, nor how many lost souls thou may find fellowship with.
 It is a miserable place... but in misery lies hope, the goals of the Dungeon Master - fine mysteries that man hath yet to solve - need not be known at present time.
 It is thine right to change the colour of soul, the Dungeon Master would see to it that your urges are sated.
-Should you wish to breach the surface and be relieved the veil of shadow, you may consult the Dungeon Master - ever watchful.`
-
-const colours = require('./colours.json');
+Should thou wish to breach the surface and be relieved the veil of shadow, you may consult the Dungeon Master - ever watchful.`
 
 const colourAv = {
     '1032375800256811018':'R',
@@ -31,8 +28,9 @@ const exemptRoleId = '1032722633118187550';
 const ownerId = '372325472811352065';
 const ownerChannel = '1032742077332729887';
 const memberRoleId = '1032733231205843136';
+const deanonId = '1032697010496737360';
 const defaultColourId = '1032376058936303637';
-const viewperm = Discord.PermissionsBitField.Flags = Discord.PermissionFlagsBits.ViewChannel;
+const viewperm = Discord.PermissionFlagsBits.ViewChannel;
 
 client.scommands = new Discord.Collection();
 const scommandFiles = fs.readdirSync('./slashCommands/').filter(file => file.endsWith('.js'));
@@ -182,8 +180,10 @@ async function joinNewMembers(guild){
                     }
                 ]
             });
-
             memberChannels[m.id] = c.id;
+            writeChannels();
+
+            //Create all the webhooks for the channel
             new Promise(async (resolve,reject)=>{
                 // slog('DANGER ZONE');
                 // return;
@@ -221,6 +221,11 @@ async function joinNewMembers(guild){
 client.once(Discord.Events.ClientReady, async client => {
     console.log('DUNGEON MASTER ONLINE');
     const guild = client.guilds.cache.first();
+
+    // IRRELEVANT
+
+    // IRRELEVANT
+
     const channels = guild.channels.cache.filter(c=>(c.type == Discord.ChannelType.GuildText) && (c.parentId == dungeonCategoryId));
     const mcValues = Object.values(memberChannels);
     // const channels = Object.values(channelsM.values());
@@ -233,7 +238,6 @@ client.once(Discord.Events.ClientReady, async client => {
             memberChannels[members.first().user.id]=c.id;
             slog(`Added member ${members.first().user.tag}`);
         } else if (members.size == 0 && mcValues.includes(c.id)) {
-            slog('Checking if old member.');
             const keys = Object.keys(memberChannels)
             let delCh = c.id;
             for (let i=0;i<keys.length;i++){
@@ -241,6 +245,8 @@ client.once(Discord.Events.ClientReady, async client => {
                     const isPossibleMember = guild.members.resolve(keys[i]);
                     if (isPossibleMember){
                         const possibleMember = await guild.members.fetch(keys[i]);
+                        // Break out if its deanon
+                        if (possibleMember.roles.resolve(deanonId)) break;
                         slog('Found old member.');
                         possibleMember.roles.add(memberRoleId);
                         possibleMember.roles.add(defaultColourId);
@@ -356,10 +362,11 @@ client.on(Discord.Events.GuildMemberAdd, async member => {
             }
         ]
     });
-    
-    //Create all the webhooks for the channel
 
     memberChannels[member.id] = c.id;
+    writeChannels();
+
+    //Create all the webhooks for the channel
     new Promise(async (resolve,reject)=>{
         // slog('DANGER ZONE');
         // return;
@@ -388,7 +395,7 @@ client.on(Discord.Events.GuildMemberAdd, async member => {
                 }
             }).catch((err)=>reject(err));
         }
-    }).then(()=>{writeWebhooks();writeChannels();}).catch((err)=>console.log(err));
+    }).then(()=>{writeWebhooks();}).catch((err)=>console.log(err));
     slog('Created new channel for '+member.user.tag);
 });
 
@@ -400,12 +407,11 @@ client.on(Discord.Events.InteractionCreate, async interaction => {
 	if (!command) return;
 
 	try {
-        // if (interaction.commandName == 'colour' || interaction.commandName == 'colours') {
-        //     await command.execute(interaction,colours);
-        // } else {
+        if (interaction.commandName == 'dive') {
+            await command.execute(interaction,memberChannels);
+        } else {
             await command.execute(interaction);
-            // slog(interaction.options.get('colour'));
-        // }
+        }
 	} catch (error) {
 		console.trace(error);
 		await interaction.reply({ content: 'Unknown Error.', ephemeral: true });

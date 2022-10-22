@@ -22,12 +22,10 @@ module.exports = {
 	data: data,
 	async execute(interaction) {
 		try{
-            // run dis shit at .value
             const choice = interaction.options.get('colour')
 
-            var i;
             const keys = Object.keys(colours);
-            for(i = 0; i < keys.length; i++){
+            for(let i = 0; i < keys.length; i++){
                 if(interaction.member.roles.cache.has(colours[keys[i]])){
                     interaction.member.roles.remove(colours[keys[i]]);
                 }

@@ -16,13 +16,11 @@ module.exports = {
 		try{
 
             if(interaction.member.roles.cache.has(deanonId)){
-                interaction.reply({content:'The Dungeon Master shall escort you...', ephemeral:true})
+                interaction.reply({content:'The Dungeon Master shall escort you...', ephemeral:true});
                 setTimeout(async ()=>{
-                    interaction.member.roles.remove(deanonId);
-                    interaction.member.roles.add(memberRoleId);
                     //Edit perms of dungeon channel
                     let ch = await interaction.guild.channels.fetch(memberChannels[interaction.member.id]);
-                    ch.edit({permissionOverwrites:[
+                    await ch.edit({permissionOverwrites:[
                         {
                             id:interaction.member.guild.roles.everyone.id,
                             deny: [viewperm]
@@ -32,6 +30,8 @@ module.exports = {
                             allow: [viewperm]
                         }
                     ]});
+                    interaction.member.roles.remove(deanonId);
+                    interaction.member.roles.add(memberRoleId);
                     //Kick from audio channel
                     interaction.member.voice.disconnect();
                 },2000)

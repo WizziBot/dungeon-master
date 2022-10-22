@@ -35,9 +35,9 @@ module.exports = {
             interaction.member.roles.add(choice.value);
 
             if (choice.name == 'rainbow'){
-                interaction.reply({content:'The taste of thine soul is everchanging.', ephemeral:true})
+                interaction.reply({content:'The taste of thine soul is everchanging.', ephemeral:true});
             } else {
-                interaction.reply({content:'The taste of thine soul hath changed.', ephemeral:true})
+                interaction.reply({content:'The taste of thine soul hath changed.', ephemeral:true});
             }
 
         } catch(e){

@@ -257,6 +257,7 @@ client.once(Discord.Events.ClientReady, async client => {
         let members = c.members.filter(m=>(!m.roles.cache.has(exemptRoleId) && !m.user.bot));
         if (members.size > 0 && !mcValues.includes(c.id)) {
             memberChannels[members.first().user.id]=c.id;
+            writeChannels();
             slog(`Added member ${members.first().user.tag}`);
         } else if (members.size == 0 && mcValues.includes(c.id)) {
             const keys = Object.keys(memberChannels)
@@ -286,7 +287,6 @@ client.once(Discord.Events.ClientReady, async client => {
                 }
             }
         }
-        writeChannels();
         // slog('Updated Channels.');
         //webhooks
         let webhooks = await c.fetchWebhooks();

@@ -34,6 +34,7 @@ const colourRl = {
 }
 
 let allWebhooks = require('./webhooks.json');
+const blacklist = require('./blacklist.json');
 const perChannelWebhookNum = 8;
 
 const dungeonCategoryId = '1032563266171457546';
@@ -57,6 +58,7 @@ let memberChannels = require('./memberChannels.json');
 
 
 async function broadcastMsg(msg,isref,refmsg){
+    if (blacklist.includes(msg.author.id)) return;
     let content = '';
 
     // Inject reply

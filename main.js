@@ -34,7 +34,9 @@ const colourRl = {
 }
 
 let allWebhooks = require('./webhooks.json');
+let memberChannels = require('./memberChannels.json');
 const blacklist = require('./blacklist.json');
+let memberList = require('./memberList.json');
 const perChannelWebhookNum = 8;
 
 const dungeonCategoryId = '1032563266171457546';
@@ -44,6 +46,7 @@ const ownerChannel = '1032975203573174292';
 const memberRoleId = '1032733231205843136';
 const deanonId = '1032697010496737360';
 const defaultColourId = '1032376058936303637';
+const imposterRoleId = '1034139467356852244';
 const viewperm = Discord.PermissionFlagsBits.ViewChannel;
 
 client.scommands = new Discord.Collection();
@@ -54,11 +57,17 @@ for(const sfile of scommandFiles){
     client.scommands.set(command.name, command);
 }
 
-let memberChannels = require('./memberChannels.json');
-
 
 async function broadcastMsg(msg,isref,refmsg){
     if (blacklist.includes(msg.author.id)) return;
+    // Imposter
+    let creatureName = 'Creature';
+    if (msg.member.roles.cache.has(imposterRoleId)){
+        let rndMember = memberList[Math.floor(Math.random()*memberList.length)];
+        creatureName = rndMember;
+    }
+
+    // Reply functionality
     let content = '';
 
     // Inject reply
@@ -108,7 +117,7 @@ async function broadcastMsg(msg,isref,refmsg){
                 whs.get(col[colour]).send({
                     content: content,
                     files: attachments,
-                    username: 'Creature',
+                    username: creatureName,
                 });
             });
         });
@@ -127,6 +136,14 @@ async function writeChannels(){
     const data = JSON.stringify(memberChannels,null,4);
     slog('WRT:CH');
     fs.writeFileSync('./memberChannels.json',data,(err)=>{
+        if (err) console.trace(err);
+    });
+}
+
+async function writeMembers(){
+    const data = JSON.stringify(memberList,null,4);
+    slog('WRT:MB');
+    fs.writeFileSync('./memberList.json',data,(err)=>{
         if (err) console.trace(err);
     });
 }
@@ -189,6 +206,10 @@ async function joinNewMembers(guild){
             slog(`New member ${m.user.tag}`);
             m.roles.add(memberRoleId);
             m.roles.add(defaultColourId);
+
+            memberList.push(member.displayName);
+            writeMembers();
+
             const dungeon = await m.guild.channels.fetch(dungeonCategoryId);
             let c = await dungeon.children.create({
                 name:m.user.tag,
@@ -257,10 +278,18 @@ client.once(Discord.Events.ClientReady, async client => {
         //channels
         if (c.id == ownerChannel) continue;
         let members = c.members.filter(m=>(!m.roles.cache.has(exemptRoleId) && !m.user.bot));
+        if (members.size > 0){
+            const m = members.first();
+            if (!memberList.includes(m.displayName)){
+                memberList.push(m.displayName);
+                writeMembers();
+            }
+        }
         if (members.size > 0 && !mcValues.includes(c.id)) {
-            memberChannels[members.first().user.id]=c.id;
+            const m = members.first();
+            memberChannels[m.user.id]=c.id;
             writeChannels();
-            slog(`Added member ${members.first().user.tag}`);
+            slog(`Added member ${m.user.tag}`);
         } else if (members.size == 0 && mcValues.includes(c.id)) {
             const keys = Object.keys(memberChannels)
             let delCh = c.id;
@@ -364,6 +393,8 @@ client.on(Discord.Events.GuildMemberAdd, async member => {
         return;
     }
     slog(`New member ${member.user.tag}`);
+    memberList.push(member.displayName);
+    writeMembers();
 
     const dungeon = await member.guild.channels.fetch(dungeonCategoryId);
     const c = await dungeon.children.create({

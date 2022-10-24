@@ -1,5 +1,4 @@
 const { SlashCommandBuilder } = require('discord.js');
-const colours = require('../colours.json');
 
 const data = new SlashCommandBuilder()
                 .setName('colour')
@@ -21,9 +20,9 @@ const data = new SlashCommandBuilder()
 module.exports = {
     name: 'colour',
 	data: data,
-	async execute(interaction) {
+	async execute(interaction,colours) {
 		try{
-            const choice = interaction.options.get('colour')
+            const choice = interaction.options.get('colour');
 
             const keys = Object.keys(colours);
             for(let i = 0; i < keys.length; i++){
@@ -41,7 +40,7 @@ module.exports = {
             }
 
         } catch(e){
-            interaction.reply({content:'Unknown Error.'});
+            interaction.reply({content:'Unknown Error.',ephemeral:true});
         }
 	},
 };

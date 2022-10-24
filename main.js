@@ -32,11 +32,14 @@ const colourRl = {
     '1032376577570394143':'I',
     '1033424455034228806':'U'
 }
-
+const colours = require('./colours.json');
 let allWebhooks = require('./webhooks.json');
 let memberChannels = require('./memberChannels.json');
 const blacklist = require('./blacklist.json');
 let memberList = require('./memberList.json');
+let config = require('./config.json');
+const { waitForDebugger } = require('inspector');
+let impersonationMap = {};
 const perChannelWebhookNum = 8;
 
 const dungeonCategoryId = '1032563266171457546';
@@ -63,8 +66,7 @@ async function broadcastMsg(msg,isref,refmsg){
     // Imposter
     let creatureName = 'Creature';
     if (msg.member.roles.cache.has(imposterRoleId)){
-        let rndMember = memberList[Math.floor(Math.random()*memberList.length)];
-        creatureName = rndMember;
+        creatureName = impersonationMap[msg.author.id][0];
     }
 
     // Reply functionality
@@ -124,26 +126,21 @@ async function broadcastMsg(msg,isref,refmsg){
     });
 }
 
-async function writeWebhooks(){
-    const data = JSON.stringify(allWebhooks,null,4);
-    slog('WRT:WH');
-    fs.writeFileSync('./webhooks.json',data,(err)=>{
-        if (err) console.trace(err);
-    });
-}
-
-async function writeChannels(){
-    const data = JSON.stringify(memberChannels,null,4);
-    slog('WRT:CH');
-    fs.writeFileSync('./memberChannels.json',data,(err)=>{
-        if (err) console.trace(err);
-    });
-}
-
-async function writeMembers(){
-    const data = JSON.stringify(memberList,null,4);
-    slog('WRT:MB');
-    fs.writeFileSync('./memberList.json',data,(err)=>{
+async function writeChanges(name){
+    let data = '';
+    let filename = '';
+    slog(`WRT:${name}`);
+    if (name == 'WH') {
+        data = JSON.stringify(memberList,null,4);
+        filename = './webhooks.json';
+    } else if (name == 'CH') {
+        data = JSON.stringify(memberChannels,null,4);
+        filename = './memberChannels.json';
+    } else if (name == 'MB') {
+        data = JSON.stringify(memberList,null,4);
+        filename = './memberList.json';
+    }
+    fs.writeFileSync(filename,data,(err)=>{
         if (err) console.trace(err);
     });
 }
@@ -196,8 +193,8 @@ async function purgeChannels(){
             }
         }
     }
-    writeWebhooks();
-    writeChannels();
+    writeChanges('WH');
+    writeChanges('CH');
 }
 
 async function joinNewMembers(guild){
@@ -208,7 +205,7 @@ async function joinNewMembers(guild){
             m.roles.add(defaultColourId);
 
             memberList.push(member.displayName);
-            writeMembers();
+            writeChanges('MB');
 
             const dungeon = await m.guild.channels.fetch(dungeonCategoryId);
             let c = await dungeon.children.create({
@@ -225,7 +222,7 @@ async function joinNewMembers(guild){
                 ]
             });
             memberChannels[m.id] = c.id;
-            writeChannels();
+            writeChanges('CH');
 
             //Create all the webhooks for the channel
             new Promise(async (resolve,reject)=>{
@@ -256,7 +253,7 @@ async function joinNewMembers(guild){
                         }
                     }).catch((err)=>reject(err));
                 }
-            }).then(()=>{writeWebhooks();writeChannels();}).catch((err)=>console.log(err));
+            }).then(()=>{writeChanges('WH');writeChanges('CH');}).catch((err)=>console.log(err));
             slog('Created new channel for '+m.user.tag);
         }
     });
@@ -265,14 +262,14 @@ async function joinNewMembers(guild){
 client.once(Discord.Events.ClientReady, async client => {
     console.log('DUNGEON MASTER ONLINE');
     const guild = client.guilds.cache.first();
-
-    // IRRELEVANT
-
-    // IRRELEVANT
-
+    // Remove impersonation role
+    const imposter = guild.roles.cache.get(imposterRoleId);
+    imposter.members.forEach((member, i) => {
+        member.roles.remove(imposterRoleId);
+    });
+    // Check channels and webhooks
     const channels = guild.channels.cache.filter(c=>(c.type == Discord.ChannelType.GuildText) && (c.parentId == dungeonCategoryId));
     const mcValues = Object.values(memberChannels);
-    // const channels = Object.values(channelsM.values());
     for (let i=0;i<channels.size;i++){
         let c = channels.at(i);
         //channels
@@ -282,13 +279,13 @@ client.once(Discord.Events.ClientReady, async client => {
             const m = members.first();
             if (!memberList.includes(m.displayName)){
                 memberList.push(m.displayName);
-                writeMembers();
+                writeChanges('MB');
             }
         }
         if (members.size > 0 && !mcValues.includes(c.id)) {
             const m = members.first();
             memberChannels[m.user.id]=c.id;
-            writeChannels();
+            writeChanges('CH');
             slog(`Added member ${m.user.tag}`);
         } else if (members.size == 0 && mcValues.includes(c.id)) {
             const keys = Object.keys(memberChannels)
@@ -328,7 +325,7 @@ client.once(Discord.Events.ClientReady, async client => {
                 if (wh.name == "Voice") return;
                 allWebhooks[c.id][wh.name] = wh.id;
             });
-            writeWebhooks();
+            writeChanges('WH');
             continue;
         }
         slog('Awaiting webhooks.');
@@ -363,7 +360,7 @@ client.once(Discord.Events.ClientReady, async client => {
                     }
                 }).catch((err)=>reject(err));
             }
-        }).then(()=>{writeWebhooks();slog('Updated Webhooks.');}).catch((err)=>console.log(err));
+        }).then(()=>{writeChanges('WH');slog('Updated Webhooks.');}).catch((err)=>console.log(err));
     }
     joinNewMembers(guild);
 });
@@ -394,7 +391,7 @@ client.on(Discord.Events.GuildMemberAdd, async member => {
     }
     slog(`New member ${member.user.tag}`);
     memberList.push(member.displayName);
-    writeMembers();
+    writeChanges('MB');
 
     const dungeon = await member.guild.channels.fetch(dungeonCategoryId);
     const c = await dungeon.children.create({
@@ -412,7 +409,7 @@ client.on(Discord.Events.GuildMemberAdd, async member => {
     });
 
     memberChannels[member.id] = c.id;
-    writeChannels();
+    writeChanges('CH');
 
     //Create all the webhooks for the channel
     new Promise(async (resolve,reject)=>{
@@ -443,7 +440,7 @@ client.on(Discord.Events.GuildMemberAdd, async member => {
                 }
             }).catch((err)=>reject(err));
         }
-    }).then(()=>{writeWebhooks();}).catch((err)=>console.log(err));
+    }).then(()=>{writeChanges('WH');}).catch((err)=>console.log(err));
     slog('Created new channel for '+member.user.tag);
 });
 
@@ -457,6 +454,10 @@ client.on(Discord.Events.InteractionCreate, async interaction => {
 	try {
         if (interaction.commandName == 'dive') {
             await command.execute(interaction,memberChannels);
+        } else if (interaction.commandName == 'colour') {
+            await command.execute(interaction,colours);
+        } else if (interaction.commandName == 'impersonate') {
+            await command.execute(interaction,impersonationMap,memberList,config);
         } else {
             await command.execute(interaction);
         }

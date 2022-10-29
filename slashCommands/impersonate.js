@@ -15,7 +15,7 @@ const imposterRoleId = '1034139467356852244';
 module.exports = {
     name: 'impersonate',
 	data: data,
-	async execute(interaction,impersonationMap,memberList,writeChanges,config) {
+	async execute(interaction,impersonationMap,memberList,config) {
 		try{
             if (!config['impersonation']){
                 interaction.reply({content:'Feature disabled.',ephemeral:true});

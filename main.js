@@ -4,7 +4,7 @@ const client = new Discord.Client({
     partials: [Discord.Partials.GuildMember, Discord.Partials.User]
 });  
 const fs = require('fs');
-
+const tokenjson = require('./token.json');
 const drearySpeech = `You are in a dungeon, he has brought you here. You know not with whomst you speak, nor how many lost souls thou may find fellowship with.
 It is a miserable place... but in misery lies hope, the goals of the Dungeon Master - fine mysteries that man hath yet to solve - need not be known at present time.
 It is thine right to change the colour of soul, the Dungeon Master would see to it that your urges are sated.
@@ -480,4 +480,4 @@ client.on('messageCreate', async message => {
     }
 });
 
-client.login('MTAzMjM2OTI5NzYzODU2MzkzMw.GOZvof.OXvN3AdEab7EeOTHuBmkKlm2CsgGSI7CrqytQg');
+client.login(tokenjson);
